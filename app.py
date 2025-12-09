@@ -16,6 +16,7 @@ MARKET_END = time(15, 30)
 MARKET_TIMEZONE = pytz.timezone('Asia/Kolkata')
 DOWNLOAD_DELAY = 0.2
 MAX_RETRIES = 2
+SCAN_INTERVAL = 300  # 5 minutes in seconds
 
 # Monitoring List - Key NSE Stocks (Starting with subset to test)
 MONITORING_LIST = [
@@ -25,6 +26,14 @@ MONITORING_LIST = [
     "ASIANPAINT", "DMART", "HDFC", "GRASIM", "AARTIIND",
     "ABB", "ABCAPITAL", "ABFRL", "ABSECURITIES", "ACCELYA",
 ]
+
+# Session state initialization
+if 'last_scan' not in st.session_state:
+    st.session_state.last_scan = None
+if 'signals' not in st.session_state:
+    st.session_state.signals = []
+if 'scan_count' not in st.session_state:
+    st.session_state.scan_count = 0
 
 def is_market_open():
     """Check if market is currently open (9:30 AM - 3:30 PM IST, Mon-Fri)"""
@@ -42,12 +51,13 @@ def fetch_stock_data(symbol, period='5m', max_retries=MAX_RETRIES):
                 stock = symbol + ".NS"
                 data = yf.download(stock, period=period, interval='5m', progress=False)
                 time_module.sleep(DOWNLOAD_DELAY)
-                return data
+                if len(data) > 0:
+                    return data
             except Exception as e:
                 if attempt < max_retries - 1:
                     time_module.sleep(1)
                     continue
-                return None
+        return None
     except ImportError:
         return None
 
@@ -94,6 +104,31 @@ def send_telegram_message(message):
     except Exception as e:
         return False
 
+def process_symbol(symbol, timeframe='5m'):
+    """Process a single symbol and generate signals"""
+    try:
+        data = fetch_stock_data(symbol, timeframe)
+        if data is None or len(data) < 20:
+            return None
+        
+        ema_signal = generate_ema_signal(data)
+        
+        if ema_signal:
+            close_price = data['Close'].iloc[-1]
+            timestamp = datetime.now(MARKET_TIMEZONE).strftime("%H:%M:%S")
+            
+            signal_data = {
+                "symbol": symbol,
+                "ema_signal": ema_signal,
+                "price": close_price,
+                "timestamp": timestamp
+            }
+            return signal_data
+    except Exception as e:
+        pass
+    
+    return None
+
 # UI Header
 st.title("🚀 EMA 10/20 Breakout Stock Scanner")
 st.markdown("Real-time NSE Stock Scanner with Telegram Alerts")
@@ -119,7 +154,7 @@ with col3:
 
 st.divider()
 
-# Market status
+# Market status and scanning
 if is_market_open():
     st.success("🟢 MARKET OPEN - Scanner Running")
     st.markdown("""
@@ -145,10 +180,47 @@ with st.expander("View Settings"):
     st.write(f"**Signal Cooldown**: 5 minutes")
     st.write(f"**Operating Hours**: 9:30 AM - 3:30 PM IST")
     st.write(f"**Telegram Enabled**: Yes")
+    st.write(f"**Scans Completed**: {st.session_state.scan_count}")
 
 # Live signal display
-st.markdown("**Scanner Status:**")
-st.info("Dashboard mode active - Scanning logic coming soon")
+st.markdown("**Recent Signals:**")
+
+if st.session_state.signals:
+    for signal in st.session_state.signals[-10:]:
+        if signal['ema_signal'] == 'BULLISH':
+            st.success(f"📈 {signal['symbol']}: EMA BULLISH CROSS @ {signal['price']:.2f} ({signal['timestamp']})")
+        elif signal['ema_signal'] == 'BEARISH':
+            st.error(f"📉 {signal['symbol']}: EMA BEARISH CROSS @ {signal['price']:.2f} ({signal['timestamp']})")
+else:
+    st.info("No signals detected yet. Waiting for EMA crossovers...")
+
+# Scanning loop during market hours
+if is_market_open():
+    # Perform one scan cycle
+    st.markdown("---")
+    st.markdown("**Scanning Stocks:**")
+    
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+    signal_count = 0
+    
+    for idx, symbol in enumerate(MONITORING_LIST):
+        progress = (idx + 1) / len(MONITORING_LIST)
+        progress_bar.progress(progress)
+        status_text.text(f"Scanning {symbol}... ({idx + 1}/{len(MONITORING_LIST)})")
+        
+        signal = process_symbol(symbol)
+        if signal:
+            st.session_state.signals.append(signal)
+            signal_count += 1
+            
+            # Send Telegram alert
+            msg = f"Signal: {signal['symbol']} - {signal['ema_signal']}\nPrice: {signal['price']:.2f}\nTime: {signal['timestamp']}"
+            send_telegram_message(msg)
+    
+    st.session_state.scan_count += 1
+    status_text.text(f"Scan complete! Found {signal_count} signals. Total scans: {st.session_state.scan_count}")
+    progress_bar.empty()
 
 # Auto-refresh every second to update live clock
 time_module.sleep(1)
