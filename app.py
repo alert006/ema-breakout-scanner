@@ -196,40 +196,4 @@ if is_market_open():
         
         st.dataframe(signals_df, use_container_width=True)
         
-        st.subheader('Trading Options')
-            for signal in signals:
-                with st.expander(f"{signal['symbol']} | {signal['signal']}"):
-                    col_a, col_b, col_c, col_d = st.columns(4)
-                    with col_a:
-                        st.metric('Entry', f"Rs{signal['entry']}")
-                    with col_b:
-                        st.metric('SL', f"Rs{signal['sl']}")
-                    with col_c:
-                        st.metric('Target', f"Rs{signal['target']}")
-                    with col_d:
-                        st.metric('RR', signal['rr'])
-                    st.divider()
-                    trade_type = 'SELL' if 'SELL' in signal['signal'] else 'BUY'
-                    st.write(f"**Trade Action:** {trade_type} at Rs{signal['entry']}")
-                    st.write(f"**Target Price:** Rs{signal['target']}")
-                    st.write(f"**Stop Loss:** Rs{signal['sl']}")
-
-                    st.subheader('ITM Options Strategy')
-                    entry_price = float(signal['entry'])
-                    is_bullish = 'BUY' in trade_type
-                    strike_interval = 100 if entry_price < 1000 else 500
-                    if is_bullish:
-                        itm_call_strike = (int(entry_price / strike_interval) - 1) * strike_interval
-                        st.write('**Recommended ITM CALL Option:**')
-                        st.write(f'Strike: Rs{itm_call_strike} CE')
-                        st.write(f'Buy Premium: Expected Rs50-150')
-                        st.write(f'Delta: 0.70-0.80 (High probability)')
-                        st.write(f'Expiry: Weekly/Monthly (Choose as per target)')
-                    else:
-                        itm_put_strike = (int(entry_price / strike_interval) + 1) * strike_interval
-                        st.write('**Recommended ITM PUT Option:**')
-                        st.write(f'Strike: Rs{itm_put_strike} PE')
-                        st.write(f'Buy Premium: Expected Rs50-150')
-                        st.write(f'Delta: -0.70 to -0.80 (High probability)')
-                        st.write(f'Expiry: Weekly/Monthly (Choose as per target)')
-                    st.write(f'**Greeks Guide:** Higher Delta=More directional, Lower Theta=Less decay')
+        
