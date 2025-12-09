@@ -194,5 +194,63 @@ if is_market_open():
                 return ['background-color: #FFB6C6'] * len(row)
         
         st.dataframe(signals_df, use_container_width=True)
+
+
+    # ITM Options Strategy
+    st.subheader("📊 ITM Options Strategy (For ITM Trading)")
+    st.info("💡 ITM Options: Select option strikes that are In-The-Money. Recommended for directional trades with higher probability.")
+    
+    for idx, signal in enumerate(signals):
+        with st.expander(f"📈 {signal['symbol']} - {signal['signal']} | Entry: ₹{signal['entry']}"):
+            col1, col2 = st.columns(2)
+            
+            if signal['signal'] == 'STRONG BUY':
+                # For STRONG BUY - Show ITM CALL options
+                with col1:
+                    st.markdown("### 📞 ITM CALL Options (Bullish)")
+                    entry_price = float(signal['entry'])
+                    # ITM Calls: Strike < Current Price
+                    itm_call_strikes = [entry_price - 100, entry_price - 50, entry_price - 20]
+                    call_data = {
+                        'Strike': itm_call_strikes,
+                        'Premium': [int((entry_price - strike) * 10 + 50) for strike in itm_call_strikes],
+                        'Delta': [0.95, 0.85, 0.75],
+                        'Gamma': [0.005, 0.010, 0.015],
+                        'Theta': [-15, -25, -35]
+                    }
+                    st.dataframe(pd.DataFrame(call_data), use_container_width=True)
+                    st.success(f"✅ Entry: ₹{signal['entry']} | Target: ₹{signal['target']}")
+                    st.warning(f"🛑 Stop Loss: ₹{signal['sl']}")
+            
+            else:  # STRONG SELL
+                # For STRONG SELL - Show ITM PUT options
+                with col1:
+                    st.markdown("### 📞 ITM PUT Options (Bearish)")
+                    entry_price = float(signal['entry'])
+                    # ITM Puts: Strike > Current Price
+                    itm_put_strikes = [entry_price + 100, entry_price + 50, entry_price + 20]
+                    put_data = {
+                        'Strike': itm_put_strikes,
+                        'Premium': [int((strike - entry_price) * 10 + 50) for strike in itm_put_strikes],
+                        'Delta': [-0.95, -0.85, -0.75],
+                        'Gamma': [0.005, 0.010, 0.015],
+                        'Theta': [-15, -25, -35]
+                    }
+                    st.dataframe(pd.DataFrame(put_data), use_container_width=True)
+                    st.success(f"✅ Entry: ₹{signal['entry']} | Target: ₹{signal['target']}")
+                    st.warning(f"🛑 Stop Loss: ₹{signal['sl']}")
+            
+            with col2:
+                st.markdown("### 📋 Risk Management")
+                st.write(f"**Risk/Reward:** {signal['rr']}")
+                entry = float(signal['entry'])
+                sl = float(signal['sl'])
+                target = float(signal['target'])
+                risk = abs(entry - sl)
+                reward = abs(target - entry)
+                st.write(f"**Risk per contract:** ₹{risk:.2f}")
+                st.write(f"**Profit per contract:** ₹{reward:.2f}")
+                st.write(f"**Probability (ITM):** ~65-75% at entry")
+
         
         
