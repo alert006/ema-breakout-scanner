@@ -196,6 +196,34 @@ if is_market_open():
         
         styled_df = signals_df.style.apply(highlight_signal, axis=1)
         st.dataframe(styled_df, use_container_width=True)
+
+                # Display detailed options for each signal
+            st.subheader('💼 Trading Options')
+            for signal in signals:
+                with st.expander(f"📊 {signal['symbol']} - {signal['signal']}"):
+                    col1, col2, col3, col4 = st.columns(4)
+                    with col1:
+                        st.metric('Entry Price', f"₹{signal['entry']}")
+                    with col2:
+                        st.metric('Stop Loss', f"₹{signal['sl']}")
+                    with col3:
+                        st.metric('Target Price', f"₹{signal['target']}")
+                    with col4:
+                        st.metric('Risk:Reward', signal['rr'])
+                    st.markdown('---')
+                    col_info, col_risk = st.columns(2)
+                    with col_info:
+                        st.info(f"🎯 {signal['signal']}")
+                        action = 'BUY' if signal['signal'] == 'STRONG BUY' else 'SELL'
+                        st.write(f"**Trade**: {action} at ₹{signal['entry']}")
+                        st.write(f"**Target**: ₹{signal['target']}")
+                    with col_risk:
+                        st.warning('⚠️ Risk Details')
+                        st.write(f"**Stop Loss**: ₹{signal['sl']}")
+                        entry = float(signal['entry'])
+                        sl = float(signal['sl'])
+                        risk = abs(entry - sl)
+                        st.write(f"**Risk**: ₹{risk:.2f}")
     else:
         st.info("ℹ️ No signals detected.")
 else:
