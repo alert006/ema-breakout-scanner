@@ -1,6 +1,7 @@
 import streamlit as st
 from datetime import datetime, time
 import pytz
+import time as time_module
 
 st.set_page_config(page_title="EMA Breakout Scanner", layout="wide")
 
@@ -33,14 +34,19 @@ st.success("✅ Telegram Integration Active!")
 st.info(f"🔔 Bot: 8292095073:AAHzckQbHByfwbYJ1zN4FpOy0VN0vvCO76Y")
 st.info(f"💬 Chat ID: 5894492657")
 
-current_time = datetime.now(MARKET_TIMEZONE)
-col1, col2, col3 = st.columns(3)
-with col1:
+# Get current time in IST
+current_time_ist = datetime.now(MARKET_TIMEZONE)
+
+# Create placeholder for live clock
+clock_placeholder = st.empty()
+metrics_col1, metrics_col2, metrics_col3 = st.columns(3)
+
+with metrics_col1:
     st.metric("Stocks Monitored", len(MONITORING_LIST))
-with col2:
+with metrics_col2:
     st.metric("Timeframe", "5 Minutes")
-with col3:
-    st.metric("Time (IST)", current_time.strftime("%H:%M:%S"))
+with metrics_col3:
+    clock_placeholder.metric("Time (IST) - LIVE", current_time_ist.strftime("%H:%M:%S"))
 
 st.divider()
 
@@ -67,3 +73,7 @@ with st.expander("View Settings"):
     st.write(f"**Signal Cooldown**: 5 minutes")
     st.write(f"**Operating Hours**: 9:30 AM - 3:30 PM IST")
     st.write(f"**Telegram Enabled**: Yes")
+
+# Auto-refresh every second to update time
+time_module.sleep(1)
+st.rerun()
