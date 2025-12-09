@@ -196,8 +196,7 @@ if is_market_open():
         
         styled_df = signals_df.style.apply(highlight_signal, axis=1)
         st.dataframe(styled_df, use_container_width=True)
-
-
+        
             st.subheader('Trading Options')
             for signal in signals:
                 with st.expander(f"{signal['symbol']} | {signal['signal']}"):
