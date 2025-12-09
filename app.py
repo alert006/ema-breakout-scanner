@@ -21,6 +21,7 @@ SIGNAL_COOLDOWN = 300
 
 # Monitoring List - FNO Eligible NSE Stocks + Major Indices
 MONITORING_LIST = [
+  100
     "RELIANCE", "TCS", "HDFCBANK", "ICICIBANK", "KOTAKBANK", "INFY", "SBIN", "LT",
     "ITC", "HDFC", "MARUTI", "WIPRO", "BAJAJFINSV", "BHARTIARTL", "HCLTECH", "AXISBANK",
     "ASIANPAINT", "SUNPHARMA", "DMART", "TECHM", "BAJAJ-AUTO", "SBICARD", "LTTS", "JSWSTEEL",
@@ -97,9 +98,9 @@ def generate_ema_signal(symbol, df):
         return {
             'symbol': symbol,
             'signal': signal,
-            'entry': f"{entry_price:.2f}")
-            'sl': f"{stop_loss:.2f}")
-            'target': f"{target_price:.2f}")
+            'entry': f"{entry_price:.2f}"
+            'sl': f"{stop_loss:.2f}"
+            'target': f"{target_price:.2f}"
             'rr': '1:2'
         }
     
