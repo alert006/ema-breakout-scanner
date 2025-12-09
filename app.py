@@ -137,11 +137,11 @@ def process_symbol(symbol):
                 msg += f"SL: ₹{signal_data['sl']}\n"
                 msg += f"Target: ₹{signal_data['target']}\n"
                 msg += f"RR: {signal_data['rr']}\n"
-                                msg += f"\n📱 ITM OPTION: Strike {int(float(signal_data['entry']) + (100 if signal_data['signal'] == 'STRONG BUY' else -100))}\n"
-                msg += f"Option Entry: ₹{int((100 if signal_data['signal'] == 'STRONG BUY' else -100) * 0.032)}\n"
-                msg += f"Option SL: ₹{int(abs(float(signal_data['sl']) - float(signal_data['entry'])) * 1.5)}\n"
-                msg += f"Option Target: ₹{int(abs(float(signal_data['target']) - float(signal_data['entry'])) * 2.5)}"
-                msg += f"Time: {datetime.now(MARKET_TIMEZONE).strftime('%H:%M:%S')}"
+msg += f"\nITM Strike: {int(float(signal_data['entry']) + (100 if signal_data['signal'] == 'STRONG BUY' else -100))}\n"
+                msg += f"Option Entry: Rs{int((100 if signal_data['signal'] == 'STRONG BUY' else -100) * 0.032)}\n"
+                msg += f"Option SL: Rs{int(abs(float(signal_data['sl']) - float(signal_data['entry'])) * 1.5)}\n"
+                msg += f"Option Target: Rs{int(abs(float(signal_data['target']) - float(signal_data['entry'])) * 2.5)}\n"
+                                msg += f"Time: {datetime.now(MARKET_TIMEZONE).strftime('%H:%M:%S')}"
                 
                 send_telegram_message(msg)
                 st.session_state.last_signal_time[symbol] = now
