@@ -97,9 +97,9 @@ def generate_ema_signal(symbol, df):
         return {
             'symbol': symbol,
             'signal': signal,
-            'entry': f"{entry_price:.2f}"),
-            'sl': f"{stop_loss:.2f}"),
-            'target': f"{target_price:.2f}"),
+            'entry': f"{entry_price:.2f}")
+            'sl': f"{stop_loss:.2f}")
+            'target': f"{target_price:.2f}")
             'rr': '1:2'
         }
     
