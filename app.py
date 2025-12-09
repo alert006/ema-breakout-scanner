@@ -196,7 +196,7 @@ if is_market_open():
         
         st.dataframe(signals_df, use_container_width=True)
         
-            st.subheader('Trading Options')
+        st.subheader('Trading Options')
             for signal in signals:
                 with st.expander(f"{signal['symbol']} | {signal['signal']}"):
                     col_a, col_b, col_c, col_d = st.columns(4)
