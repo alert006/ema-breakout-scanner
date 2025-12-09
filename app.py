@@ -255,5 +255,10 @@ if is_market_open():
                 st.write(f"**Profit per contract:** ₹{reward:.2f}")
                 st.write(f"**Probability (ITM):** ~65-75% at entry")
 
+# Auto-scan every 5 minutes during market hours
+if is_market_open():
+    time_module.sleep(300)
+    st.rerun()
+
         
         
