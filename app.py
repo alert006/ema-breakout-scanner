@@ -100,7 +100,7 @@ def send_telegram_message(symbol, signal_type, price, volume):
 
 def process_symbol(symbol, last_alert_times):
     try:
-        data = yf.download(symbol, period="1d", interval=FIXED_TIME_FRAME, progress=False, threads=False)
+        data = yf.download(symbol, period="1d", interval=FIXED_TIME_FRAME, progress=False, )
         time_module.sleep(DOWNLOAD_DELAY)
         if data is None or data.empty or len(data) < 2:
             return None
