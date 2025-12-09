@@ -39,6 +39,7 @@ MONITORING_LIST = [
     "YESBANK", "ZEEL", "ZOMATO",
         # Major Indices
     "^NSEI", "^NSEBANK", "^FINNIFTY", "^BSESN",
+    ]
 
 # Session state initialization
 if 'last_scan' not in st.session_state:
