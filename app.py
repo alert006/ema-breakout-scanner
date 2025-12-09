@@ -150,8 +150,8 @@ st.markdown("**Market Hours**: 9:30 AM - 3:30 PM IST (Mon-Fri)")
 
 # Telegram status
 st.success("✅ Telegram Integration Active!")
-st.info(f"🔔 Bot: {TELEGRAM_BOT_TOKEN[:20]}...")
-st.info(f"💬 Chat ID: {TELEGRAM_CHAT_ID}")
+# st.info(f"🔔 Bot: {TELEGRAM_BOT_TOKEN[:20]}...")
+# st.info(f"💬 Chat ID: {TELEGRAM_CHAT_ID}")
 
 # Metrics
 col1, col2, col3 = st.columns(3)
