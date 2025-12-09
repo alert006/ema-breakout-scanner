@@ -216,7 +216,9 @@ if is_market_open():
                         'Premium': [int((entry_price - strike) * 10 + 50) for strike in itm_call_strikes],
                         'Delta': [0.95, 0.85, 0.75],
                         'Gamma': [0.005, 0.010, 0.015],
-                        'Theta': [-15, -25, -35]
+                        'Theta': [-15, -25, -35],
+                        'Option SL': [int(float(signal['sl']) - (entry_price - strike) * 0.5) for strike in itm_call_strikes],
+                        'Option Target': [int(float(signal['target']) + (entry_price - strike) * 0.5) for strike in itm_call_strikes]
                     }
                     st.dataframe(pd.DataFrame(call_data), use_container_width=True)
                     st.success(f"✅ Entry: ₹{signal['entry']} | Target: ₹{signal['target']}")
@@ -234,7 +236,9 @@ if is_market_open():
                         'Premium': [int((strike - entry_price) * 10 + 50) for strike in itm_put_strikes],
                         'Delta': [-0.95, -0.85, -0.75],
                         'Gamma': [0.005, 0.010, 0.015],
-                        'Theta': [-15, -25, -35]
+                        'Theta': [-15, -25, -35],
+                        'Option SL': [int(float(signal['sl']) + (strike - entry_price) * 0.5) for strike in itm_put_strikes],
+                        'Option Target': [int(float(signal['target']) - (strike - entry_price) * 0.5) for strike in itm_put_strikes]
                     }
                     st.dataframe(pd.DataFrame(put_data), use_container_width=True)
                     st.success(f"✅ Entry: ₹{signal['entry']} | Target: ₹{signal['target']}")
