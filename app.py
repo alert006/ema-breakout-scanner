@@ -3,8 +3,9 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 import requests
-from datetime import datetime, timedelta
-import time
+from datetime import datetime, timedelta, time
+import pytz
+import time as time_module
 
 st.set_page_config(page_title="EMA Breakout Scanner", layout="wide")
 
@@ -13,6 +14,12 @@ TELEGRAM_BOT_TOKEN = "8292095073:AAHzckQbHByfwbYJ1zN4FpOy0VN0vvCO76Y"
 TELEGRAM_CHAT_ID = "5894492657"
 SIGNAL_COOLDOWN_MINUTES = 5
 FIXED_TIME_FRAME = "5m"
+DOWNLOAD_DELAY = 0.1  # Delay between downloads to avoid rate limiting
+
+# Market Hours IST (9:30 AM to 3:30 PM)
+MARKET_START = time(9, 30)
+MARKET_END = time(15, 30)
+MARKET_TIMEZONE = pytz.timezone('Asia/Kolkata')
 
 # Monitoring List - 180+ Indian Stocks
 MONITORING_LIST = [
@@ -43,8 +50,14 @@ MONITORING_LIST = [
     "AMOLORGTECH.NS", "AMOLPHARMA.NS", "AMOLSOLID.NS", "AMOLTEX.NS", "AMOLVAL.NS", "AMOLWIRE.NS"
 ]
 
+def is_market_open():
+    current_time = datetime.now(MARKET_TIMEZONE)
+    if current_time.weekday() >= 5:
+        return False
+    current_time_only = current_time.time()
+    return MARKET_START <= current_time_only <= MARKET_END
+
 def format_volume(vol):
-    """Format volume in readable format"""
     if vol >= 1e7:
         return f"{vol/1e7:.1f}Cr"
     elif vol >= 1e5:
@@ -52,39 +65,32 @@ def format_volume(vol):
     return f"{vol:,.0f}"
 
 def calculate_indicators(df):
-    """Calculate EMA 10, EMA 20, and other indicators"""
+    if df is None or df.empty or len(df) < 2:
+        return None
     df['EMA_10'] = df['Close'].ewm(span=10, adjust=False).mean()
     df['EMA_20'] = df['Close'].ewm(span=20, adjust=False).mean()
     return df
 
 def generate_signal(df):
-    """Generate BUY/SELL signals based on EMA crossover with 2-candle confirmation"""
-    if len(df) < 2:
+    if df is None or len(df) < 2:
         return None, None, None
-    
-    current = df.iloc[-1]
-    previous = df.iloc[-2]
-    
-    buy_signal = (previous['Close'] < previous['EMA_20'] < previous['EMA_10'] and 
-                  current['Close'] > current['EMA_20'] and current['EMA_10'] > current['EMA_20'])
-    
-    sell_signal = (previous['Close'] > previous['EMA_20'] > previous['EMA_10'] and 
-                   current['Close'] < current['EMA_20'] and current['EMA_10'] < current['EMA_20'])
-    
-    if buy_signal:
-        return "BUY", current['Close'], current['Volume']
-    elif sell_signal:
-        return "SELL", current['Close'], current['Volume']
-    
+    try:
+        current = df.iloc[-1]
+        previous = df.iloc[-2]
+        buy_signal = (previous['Close'] < previous['EMA_20'] < previous['EMA_10'] and current['Close'] > current['EMA_20'] and current['EMA_10'] > current['EMA_20'])
+        sell_signal = (previous['Close'] > previous['EMA_20'] > previous['EMA_10'] and current['Close'] < current['EMA_20'] and current['EMA_10'] < current['EMA_20'])
+        if buy_signal:
+            return "BUY", current['Close'], current['Volume']
+        elif sell_signal:
+            return "SELL", current['Close'], current['Volume']
+    except:
+        pass
     return None, None, None
 
 def send_telegram_message(symbol, signal_type, price, volume):
-    """Send signal to Telegram"""
     if signal_type is None:
         return
-    
-    message = f"🔔 EMA Breakout Alert\n\nStock: {symbol}\nSignal: {signal_type}\nPrice: ₹{price:.2f}\nVolume: {format_volume(volume)}"
-    
+    message = f"🔔 EMA Breakout Alert\\n\\nStock: {symbol}\\nSignal: {signal_type}\\nPrice: ₹{price:.2f}\\nVolume: {format_volume(volume)}"
     try:
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
         data = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
@@ -93,61 +99,49 @@ def send_telegram_message(symbol, signal_type, price, volume):
         pass
 
 def process_symbol(symbol, last_alert_times):
-    """Process a single symbol and return results"""
     try:
-        data = yf.download(symbol, period="1d", interval=FIXED_TIME_FRAME, progress=False)
-        
-        if data.empty or len(data) < 2:
+        data = yf.download(symbol, period="1d", interval=FIXED_TIME_FRAME, progress=False, threads=False)
+        time_module.sleep(DOWNLOAD_DELAY)
+        if data is None or data.empty or len(data) < 2:
             return None
-        
         data = calculate_indicators(data)
         signal, price, volume = generate_signal(data)
-        
         if signal:
             key = f"{symbol}_{signal}"
             if key not in last_alert_times or (datetime.now() - last_alert_times[key]).total_seconds() > SIGNAL_COOLDOWN_MINUTES * 60:
                 send_telegram_message(symbol, signal, price, volume)
                 last_alert_times[key] = datetime.now()
                 return {"symbol": symbol, "signal": signal, "price": price, "volume": volume}
-        
         return None
     except:
         return None
 
-# Streamlit UI
 st.title("🚀 EMA 10/20 Breakout Stock Scanner")
-st.markdown("Scanning 180+ Indian stocks for 2-Candle Breakout Confirmation signals every 5 minutes")
-
+st.markdown("Scanning 180+ Indian stocks for 2-Candle Breakout Confirmation signals")
+st.markdown("**Market Hours**: 9:30 AM - 3:30 PM IST (Mon-Fri)")
 st.info("✅ Telegram Integration Active! Your app is configured with Telegram alerts.")
 
-# Initialize session state
 if 'last_alert_times' not in st.session_state:
     st.session_state.last_alert_times = {}
-
 if 'last_scan_time' not in st.session_state:
-    st.session_state.last_scan_time = datetime.now()
+    st.session_state.last_scan_time = datetime.now(MARKET_TIMEZONE)
 
-if 'scan_results' not in st.session_state:
-    st.session_state.scan_results = []
+current_time_ist = datetime.now(MARKET_TIMEZONE)
 
-if 'auto_scan' not in st.session_state:
-    st.session_state.auto_scan = True
-
-# Display status
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.metric("Stocks Monitored", f"{len(MONITORING_LIST)}+")
 with col2:
     st.metric("Timeframe", "5 Minutes")
 with col3:
+    st.metric("Current Time (IST)", current_time_ist.strftime("%H:%M:%S"))
+with col4:
     st.metric("Last Scan", st.session_state.last_scan_time.strftime("%H:%M:%S"))
 
 st.divider()
 
-# Auto-scan loop
-if st.session_state.auto_scan:
-    st.success("🟢 Auto-Scan Running - Refreshing every 5 minutes")
-    
+if is_market_open():
+    st.success("🟢 Market OPEN - Auto-Scan Running - Refreshing every 5 minutes")
     scan_results = []
     progress_bar = st.progress(0)
     status_text = st.empty()
@@ -155,33 +149,28 @@ if st.session_state.auto_scan:
     for idx, symbol in enumerate(MONITORING_LIST):
         status_text.text(f"Scanning {idx + 1}/{len(MONITORING_LIST)}: {symbol}")
         progress_bar.progress((idx + 1) / len(MONITORING_LIST))
-        
         result = process_symbol(symbol, st.session_state.last_alert_times)
         if result:
             scan_results.append(result)
     
-    st.session_state.scan_results = scan_results
-    st.session_state.last_scan_time = datetime.now()
-    
+    st.session_state.last_scan_time = datetime.now(MARKET_TIMEZONE)
     progress_bar.empty()
     status_text.empty()
     
-    # Display results
     if scan_results:
         st.subheader("📊 Signals Detected")
-        results_df = pd.DataFrame(scan_results)
-        st.dataframe(results_df, use_container_width=True)
+        st.dataframe(pd.DataFrame(scan_results), use_container_width=True)
     
-    # Auto-refresh every 5 minutes
-    time.sleep(300)
+    time_module.sleep(300)
     st.rerun()
 else:
-    st.warning("⚪ Auto-Scan Paused")
+    market_status = "🗔️ Market CLOSED" if current_time_ist.weekday() >= 5 else "⚪ Outside Market Hours"
+    st.warning(f"{market_status} - Scanner will restart at 9:30 AM IST")
+    st.info(f"Next market open: Monday 9:30 AM IST" if current_time_ist.weekday() >= 5 else f"Market opens at 9:30 AM IST")
 
 st.divider()
 st.markdown("**Signal Logic:**")
 st.markdown("- EMA 10/20 crossover breakout")
 st.markdown("- 2-candle confirmation pattern")
-st.markdown("- 1:2 Risk-to-Reward targeting")
 st.markdown("- Telegram alert notifications")
-st.markdown(f"- Scan interval: Every {SIGNAL_COOLDOWN_MINUTES} minutes")
+st.markdown("- Operating Hours: Monday - Friday, 9:30 AM - 3:30 PM IST")
