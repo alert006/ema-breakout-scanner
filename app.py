@@ -215,3 +215,23 @@ if is_market_open():
                     st.write(f"**Trade Action:** {trade_type} at Rs{signal['entry']}")
                     st.write(f"**Target Price:** Rs{signal['target']}")
                     st.write(f"**Stop Loss:** Rs{signal['sl']}")
+
+                    st.subheader('ITM Options Strategy')
+                    entry_price = float(signal['entry'])
+                    is_bullish = 'BUY' in trade_type
+                    strike_interval = 100 if entry_price < 1000 else 500
+                    if is_bullish:
+                        itm_call_strike = (int(entry_price / strike_interval) - 1) * strike_interval
+                        st.write('**Recommended ITM CALL Option:**')
+                        st.write(f'Strike: Rs{itm_call_strike} CE')
+                        st.write(f'Buy Premium: Expected Rs50-150')
+                        st.write(f'Delta: 0.70-0.80 (High probability)')
+                        st.write(f'Expiry: Weekly/Monthly (Choose as per target)')
+                    else:
+                        itm_put_strike = (int(entry_price / strike_interval) + 1) * strike_interval
+                        st.write('**Recommended ITM PUT Option:**')
+                        st.write(f'Strike: Rs{itm_put_strike} PE')
+                        st.write(f'Buy Premium: Expected Rs50-150')
+                        st.write(f'Delta: -0.70 to -0.80 (High probability)')
+                        st.write(f'Expiry: Weekly/Monthly (Choose as per target)')
+                    st.write(f'**Greeks Guide:** Higher Delta=More directional, Lower Theta=Less decay')
