@@ -18,7 +18,7 @@ DOWNLOAD_DELAY = 0.2
 MAX_RETRIES = 2
 SCAN_INTERVAL = 300  # 5 minutes in seconds
 
-# Monitoring List - FNO Eligible NSE Stocks (150+ stocks for options trading)
+# Monitoring List - FNO Eligible NSE Stocks (150+ stocks) + Major Indices (Nifty 50, BankNifty, FinNifty, Sensex)
 MONITORING_LIST = [
 # FNO Eligible Stocks - Top Liquid NSE Stocks
     "RELIANCE", "TCS", "HDFCBANK", "ICICIBANK", "KOTAKBANK", "INFY", "SBIN", "LT",
@@ -37,6 +37,8 @@ MONITORING_LIST = [
     "TATASTL", "TCS", "THERMACARE", "TIINDIA", "TITAN", "TORNTPHARM", "TRENT", "TRIDENT",
     "UBL", "UCOBANK", "UNIONBANK", "UPL", "VGUARD", "VESTEL", "VIRAJPROP", "WIPRO",
     "YESBANK", "ZEEL", "ZOMATO",
+        # Major Indices
+    "^NSEI", "^NSEBANK", "^FINNIFTY", "^BSESN",
 
 # Session state initialization
 if 'last_scan' not in st.session_state:
