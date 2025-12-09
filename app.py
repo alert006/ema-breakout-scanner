@@ -137,8 +137,7 @@ def process_symbol(symbol):
                 msg += f"SL: ₹{signal_data['sl']}\n"
                 msg += f"Target: ₹{signal_data['target']}\n"
                 msg += f"RR: {signal_data['rr']}\n"
-                                msg += f"Time: {datetime.now(MARKET_TIMEZONE).strftime('%H:%M:%S')}"
-                
+                    msg += f"Time: {datetime.now(MARKET_TIMEZONE).strftime('%H:%M:%S')}"                
                 send_telegram_message(msg)
                 st.session_state.last_signal_time[symbol] = now
             
